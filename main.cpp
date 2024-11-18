@@ -130,8 +130,37 @@ void setupMiniFileSystem() {
     removeResidueTar(); 
 }
 
+
+void destroyMiniFileSystem() {
+    // Let's fork so that we can execvp with output streams redirected to /dev/null
+    pid_t pid = fork();
+
+    // Child Process
+    if (pid == 0) {
+        // Redirect the child output streams to dev/null
+        freopen("/dev/null", "w", stdout);
+        freopen("/dev/null", "w", stderr);
+
+        // Execute the mkdir
+        char cmd[]{"rm"};
+        char* const args[]{cmd, const_cast<char*>("-rf"), const_cast<char*>(CONTAINER_ROOT.data()), nullptr};
+        execvp(cmd, args);
+    } else if (pid > 0) {
+        // Parent process - wait on the child to complete
+        int childStatus{};
+        waitpid(pid, &childStatus, 0);
+
+        if (childStatus != 0) {
+            throw std::runtime_error(std::format("Error: There was an error destroying the container root. Perhaps the directory {} has already been deleted.  (f:destroyMiniFileSystem)", CONTAINER_ROOT));
+        }
+    } else {
+        throw std::runtime_error("Error: There was an error whilst trying fork. (f:destroyMiniFileSystem)");
+    }
+}
+
 int main() {
     setupMiniFileSystem();
+    destroyMiniFileSystem();
 
     return EXIT_SUCCESS;
 }
