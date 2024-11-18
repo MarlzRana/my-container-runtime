@@ -20,7 +20,7 @@ void isolateAndRun() {
     // CLONE_NEWIPC gives the child process a copy of the IPC namespace
     // There things needs for IPC in here like mutexs, queues and semaphores
     // CLONE_NEWNET gives the child process its own network stack
-    int namespacesToUnshare{CLONE_NEWPID || CLONE_NEWNS || CLONE_NEWUTS || CLONE_NEWIPC || CLONE_NEWNET};
+    int namespacesToUnshare{CLONE_NEWPID | CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC | CLONE_NEWNET};
     if (unshare(namespacesToUnshare) == -1) {
         std::runtime_error("Error: Unable to unshare namespaces from parent to create container. (f:isolateAndRun)");
     }
