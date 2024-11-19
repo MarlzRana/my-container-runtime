@@ -11,11 +11,20 @@
 
 void isolateAndRun() {
     // REMEMBER: The child process is the container
+
+    // Turn off mount namespace propagation
+    // MS_PRIVATE makes sure that mount namespace changes in children processes won't propagate to their parent
+    // MS_REC makes sure that MS_PRIVATE is applied recursively to all mount points under / (or root)
+    if (mount("none", "/", NULL, MS_PRIVATE | MS_REC, NULL) == -1) {
+        std::runtime_error("Error: Unable to turn of mount namespace propagation. (f:isolateAndRun)");
+    }
     
     // Give any child process new namespaces (that are different from the parent)
     // CLONE_NEWPID gives the new child process a new PID namespace (with it having a pid of 1)
     // CLONE_NEWNS gives the new child process a copy of the parents mount namespace by value
     // So making changes in the childs mount namespace won't make changes to the parents mount namespace
+    // However mount namespace change propagation may still be on between the parent and child
+    // Hence we explicitly turn it off just before this
     // CLONE_NEWUTS gives the child process a copy of the Hostname and NIS domain name
     // CLONE_NEWIPC gives the child process a copy of the IPC namespace
     // There things needs for IPC in here like mutexs, queues and semaphores
@@ -24,6 +33,8 @@ void isolateAndRun() {
     if (unshare(namespacesToUnshare) == -1) {
         std::runtime_error("Error: Unable to unshare namespaces from parent to create container. (f:isolateAndRun)");
     }
+
+
 }
 
 int main() {
