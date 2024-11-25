@@ -51,8 +51,10 @@ void isolateAndRun() {
             throw std::runtime_error("Error: Unable to change working directory to new root. (f:isolateAndRun)");
         }
 
-        // 
-
+        // Mount the proc file system
+        if (mount("proc", "/proc", "proc", 0, NULL) != 0) {
+            throw std::runtime_error("Error: Unable to remount the proc file system. (f:isolateAndRun)");
+        }
     } else if (pid > 0) {
         // Parent process - wait on the child to complete
         int childStatus{};
