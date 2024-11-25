@@ -1,6 +1,7 @@
+#include "constants.hpp"
 #include "container_minifs.hpp"
-#include <cstdlib>
 
+#include <cstdlib>
 #include <linux/sched.h>
 #include <iostream>
 #include <fstream>
@@ -34,13 +35,40 @@ void isolateAndRun() {
         std::runtime_error("Error: Unable to unshare namespaces from parent to create container. (f:isolateAndRun)");
     }
 
+    // Fork after unsharing
+    pid_t pid = fork();
+
+    if (pid == 0) {
+        // Child process
+
+        // Change the root
+        if (chroot(const_cast<char*>(CONTAINER_ROOT.data())) != 0) {
+            throw std::runtime_error("Error: Unable to change the root directory. (f:isolateAndRun)");
+        }
+
+        // Change the working directory to the new root
+        if (chdir("/") != 0) {
+            throw std::runtime_error("Error: Unable to change working directory to new root. (f:isolateAndRun)");
+        }
+    } else if (pid > 0) {
+        // Parent process - wait on the child to complete
+        int childStatus{};
+        waitpid(pid, &childStatus, 0);
+
+        if (childStatus != 0) {
+            throw std::runtime_error("Error: The isolated child process threw an error. (f:isolateAndRun)"));
+        }
+    } else {
+        throw std::runtime_error("Error: There was an error whilst trying fork. (f:isolateAndRun)");
+    }
+
 
 }
 
 int main() {
     createMiniFileSystem();
     isolateAndRun();
-    destroyMiniFileSystem();
+    // destroyMiniFileSystem();
 
     return EXIT_SUCCESS;
 }
