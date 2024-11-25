@@ -50,13 +50,16 @@ void isolateAndRun() {
         if (chdir("/") != 0) {
             throw std::runtime_error("Error: Unable to change working directory to new root. (f:isolateAndRun)");
         }
+
+        // 
+
     } else if (pid > 0) {
         // Parent process - wait on the child to complete
         int childStatus{};
         waitpid(pid, &childStatus, 0);
 
         if (childStatus != 0) {
-            throw std::runtime_error("Error: The isolated child process threw an error. (f:isolateAndRun)"));
+            throw std::runtime_error("Error: The isolated child process threw an error. (f:isolateAndRun)");
         }
     } else {
         throw std::runtime_error("Error: There was an error whilst trying fork. (f:isolateAndRun)");
