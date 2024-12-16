@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string_view>
 #include <unistd.h>
+#include <sys/mount.h>
 #include <sys/wait.h>
 #include <format>
 
@@ -112,11 +113,17 @@ void removeResidueTar() {
     
 }
 
+void mountOverlayFS() {
+    // When creating an overlay filesystem mount the source is "overlay" and the target is the merged directory
+    mount("overlay", const_cast<char*>(CONTAINER_OVERLAY_FS_MERGED.c_str()), "overlay", 0, const_cast<char*>(mountOptions.c_str()));
+}
+
 void createMiniFileSystem() {
     makeContainerOverlayFSDirectories();
     curlMiniFileSystem();
     untarMiniFileSystem();
-    removeResidueTar(); 
+    removeResidueTar();
+    mountOverlayFS();
 }
 
 
