@@ -15,10 +15,10 @@
 
 void makeContainerOverlayFSDirectories() {
     // Make the directories that will make up the overlay file system
-    std::filesystem::create_directories(CONTAINER_OVERLAY_FS / "base");
-    std::filesystem::create_directories(CONTAINER_OVERLAY_FS / "diff");
-    std::filesystem::create_directories(CONTAINER_OVERLAY_FS / "merged");
-    std::filesystem::create_directories(CONTAINER_OVERLAY_FS / "scratchpad");
+    std::filesystem::create_directories(CONTAINER_OVERLAY_FS_BASE);
+    std::filesystem::create_directories(CONTAINER_OVERLAY_FS_DIFF);
+    std::filesystem::create_directories(CONTAINER_OVERLAY_FS_MERGED);
+    std::filesystem::create_directories(CONTAINER_OVERLAY_FS_WORK);
 }
 
 void curlMiniFileSystem() {
@@ -61,8 +61,7 @@ void untarMiniFileSystem() {
         // Execute the tar
         char cmd[]{"tar"};
         const std::filesystem::path tarFilePth{CONTAINER_OVERLAY_FS / std::string(ALPINE_LINUX_MINIFS_URL.substr(ALPINE_LINUX_MINIFS_URL.find_last_of('/') + 1))};
-        const std::filesystem::path basePth{CONTAINER_OVERLAY_FS / "base"};
-        char* const args[]{cmd, const_cast<char*>("xzf"), const_cast<char*>(tarFilePth.c_str()), const_cast<char*>("-C"), const_cast<char*>(basePth.c_str()), nullptr};
+        char* const args[]{cmd, const_cast<char*>("xzf"), const_cast<char*>(tarFilePth.c_str()), const_cast<char*>("-C"), const_cast<char*>(CONTAINER_OVERLAY_FS_BASE.c_str()), nullptr};
         std::cout << "Command: " << cmd << std::endl;
         std::cout << "Arguments: ";
         for (char* const* arg = args; *arg != nullptr; ++arg) {
