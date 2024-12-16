@@ -42,7 +42,7 @@ void isolateAndRun() {
         // Child process
 
         // Change the root
-        if (chroot(const_cast<char*>(CONTAINER_ROOT_PTH.data())) != 0) {
+        if (chroot(const_cast<char*>(CONTAINER_ROOT.c_str())) != 0) {
             throw std::runtime_error("Error: Unable to change the root directory. (f:isolateAndRun)");
         }
 
@@ -73,7 +73,7 @@ void isolateAndRun() {
 int main() {
     createMiniFileSystem();
     // isolateAndRun();
-    // destroyMiniFileSystem();
+    destroyMiniFileSystem();
 
     return EXIT_SUCCESS;
 }
