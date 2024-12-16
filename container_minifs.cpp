@@ -9,6 +9,23 @@
 #include <sys/wait.h>
 #include <format>
 
+void makeContainerOverlayFS() {
+    // Let's fork so that we can execvp with output streams redirected to /dev/null
+    pid_t pid = fork();
+
+    // Child process
+    if (pid == 0) {
+        // Redirect the child's output streams to dev/null
+        freopen("/dev/null", "w", stdout);
+        freopen("/dev/null", "w", stderr);
+
+        // Execute the mkdir
+        char cmd[]{"mkdir"};
+        char* const args[]{cmd, const_cast<char*>(CONTAINER_OVERLAY_FS_PTH.data()), nullptr};
+        
+    }
+}
+
 
 void makeContainerRoot() {
     // Let's fork so that we can execvp with output streams redirected to /dev/null
@@ -22,7 +39,7 @@ void makeContainerRoot() {
 
         // Execute the mkdir
         char cmd[]{"mkdir"};
-        char* const args[]{cmd, const_cast<char*>(CONTAINER_ROOT.data()), nullptr};
+        char* const args[]{cmd, const_cast<char*>(CONTAINER_ROOT_PTH.data()), nullptr};
         execvp(cmd, args);
     } else if (pid > 0) {
         // Parent process - wait on the child to complete
@@ -30,7 +47,7 @@ void makeContainerRoot() {
         waitpid(pid, &childStatus, 0);
 
         if (childStatus != 0) {
-            throw std::runtime_error(std::format("Error: There was an error making the container root. Perhaps the directory '{}' already exists. (f:makeContainerRoot)", CONTAINER_ROOT));
+            throw std::runtime_error(std::format("Error: There was an error making the container root. Perhaps the directory '{}' already exists. (f:makeContainerRoot)", CONTAINER_ROOT_PTH));
         }
     } else {
         throw std::runtime_error("Error: There was an error whilst trying fork. (f:makeContainerRoot)");
@@ -50,7 +67,7 @@ void curlMiniFileSystem() {
 
         // Execute the curl
         char cmd[]{"curl"};
-        char* const args[]{cmd, const_cast<char*>("-O"), const_cast<char*>(ALPINE_LINUX_MINIFS_URL.data()), const_cast<char*>("--output-dir"), const_cast<char*>(CONTAINER_ROOT.data()), nullptr};
+        char* const args[]{cmd, const_cast<char*>("-O"), const_cast<char*>(ALPINE_LINUX_MINIFS_URL.data()), const_cast<char*>("--output-dir"), const_cast<char*>(CONTAINER_ROOT_PTH.data()), nullptr};
         execvp(cmd, args);
     } else if (pid > 0) {
         // Parent process - wait on the child to complete
@@ -78,8 +95,8 @@ void untarMiniFileSystem() {
 
         // Execute the curl
         char cmd[]{"tar"};
-        std::string tarFilePath = std::string(CONTAINER_ROOT) + "/" + std::string(ALPINE_LINUX_MINIFS_URL.substr(ALPINE_LINUX_MINIFS_URL.find_last_of('/') + 1));
-        char* const args[]{cmd, const_cast<char*>("xvzf"), const_cast<char*>(tarFilePath.c_str()), const_cast<char*>("-C"), const_cast<char*>(CONTAINER_ROOT.data()), nullptr};
+        std::string tarFilePath = std::string(CONTAINER_ROOT_PTH) + "/" + std::string(ALPINE_LINUX_MINIFS_URL.substr(ALPINE_LINUX_MINIFS_URL.find_last_of('/') + 1));
+        char* const args[]{cmd, const_cast<char*>("xvzf"), const_cast<char*>(tarFilePath.c_str()), const_cast<char*>("-C"), const_cast<char*>(CONTAINER_ROOT_PTH.data()), nullptr};
         execvp(cmd, args);
     } else if (pid > 0) {
         // Parent process - wait on the child to complete
@@ -107,7 +124,7 @@ void removeResidueTar() {
 
         // Execute the rm
         char cmd[]{"rm"};
-        std::string tarFilePath = std::string(CONTAINER_ROOT) + "/" + std::string(ALPINE_LINUX_MINIFS_URL.substr(ALPINE_LINUX_MINIFS_URL.find_last_of('/') + 1));
+        std::string tarFilePath = std::string(CONTAINER_ROOT_PTH) + "/" + std::string(ALPINE_LINUX_MINIFS_URL.substr(ALPINE_LINUX_MINIFS_URL.find_last_of('/') + 1));
         char* const args[]{cmd, const_cast<char*>(tarFilePath.c_str()), nullptr};
         execvp(cmd, args);
     } else if (pid > 0) {
@@ -144,7 +161,7 @@ void destroyMiniFileSystem() {
 
         // Execute the mkdir
         char cmd[]{"rm"};
-        char* const args[]{cmd, const_cast<char*>("-rf"), const_cast<char*>(CONTAINER_ROOT.data()), nullptr};
+        char* const args[]{cmd, const_cast<char*>("-rf"), const_cast<char*>(CONTAINER_ROOT_PTH.data()), nullptr};
         execvp(cmd, args);
     } else if (pid > 0) {
         // Parent process - wait on the child to complete
@@ -152,7 +169,7 @@ void destroyMiniFileSystem() {
         waitpid(pid, &childStatus, 0);
 
         if (childStatus != 0) {
-            throw std::runtime_error(std::format("Error: There was an error destroying the container root. Perhaps the directory {} has already been deleted.  (f:destroyMiniFileSystem)", CONTAINER_ROOT));
+            throw std::runtime_error(std::format("Error: There was an error destroying the container root. Perhaps the directory {} has already been deleted.  (f:destroyMiniFileSystem)", CONTAINER_ROOT_PTH));
         }
     } else {
         throw std::runtime_error("Error: There was an error whilst trying fork. (f:destroyMiniFileSystem)");
