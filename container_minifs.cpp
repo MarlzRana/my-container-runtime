@@ -115,7 +115,11 @@ void removeResidueTar() {
 
 void mountOverlayFS() {
     // When creating an overlay filesystem mount the source is "overlay" and the target is the merged directory
-    mount("overlay", const_cast<char*>(CONTAINER_OVERLAY_FS_MERGED.c_str()), "overlay", 0, const_cast<char*>(mountOptions.c_str()));
+    std::string mountOptions{std::format("lowerdir={},upperdir={},workdir={}", CONTAINER_OVERLAY_FS_BASE.c_str(), CONTAINER_OVERLAY_FS_DIFF.c_str(), CONTAINER_OVERLAY_FS_WORK.c_str())};
+    if (mount("overlay", const_cast<char*>(CONTAINER_OVERLAY_FS_MERGED.c_str()), "overlay", 0, const_cast<char*>(mountOptions.c_str())) != 0) {
+        throw std::runtime_error("Error: Could not mount overlay file system. (f:mountOverlayFS)");
+    }
+    
 }
 
 void createMiniFileSystem() {
@@ -128,6 +132,11 @@ void createMiniFileSystem() {
 
 
 void destroyMiniFileSystem() {
+    // Let's unmount the overlay file system
+    if(umount(const_cast<char*>(CONTAINER_OVERLAY_FS_MERGED.c_str())) != 0) {
+        throw std::runtime_error("Error: Could not unmount overlay file system. (f:destroyMiniFileSystem)");
+    }
+
     // Let's fork so that we can execvp with output streams redirected to /dev/null
     pid_t pid = fork();
 
@@ -147,7 +156,7 @@ void destroyMiniFileSystem() {
         waitpid(pid, &childStatus, 0);
 
         if (childStatus != 0) {
-            throw std::runtime_error(std::format("Error: There was an error destroying the container root. Perhaps the directory {} has already been deleted.  (f:destroyMiniFileSystem)", CONTAINER_ROOT.c_str()));
+            throw std::runtime_error(std::format("Error: There was an error destroying the container root. Perhaps the directory {} has already been deleted.  (f:destroyMiniFileSystem)", CONTAINER_OVERLAY_FS.c_str()));
         }
     } else {
         throw std::runtime_error("Error: There was an error whilst trying fork. (f:destroyMiniFileSystem)");
