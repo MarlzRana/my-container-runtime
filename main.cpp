@@ -9,6 +9,7 @@
 #include <string>
 #include <sys/wait.h>
 #include <sys/mount.h>
+#include <sys/stat.h>
 
 void isolateAndRun() {
     // Run everything in a new child process
@@ -47,11 +48,22 @@ void isolateAndRun() {
             throw std::runtime_error("Error: Unable to change working directory to new root. (f:isolateAndRun)");
         }
 
+        // Setup the default devices in /dev
+        // It takes in a mode as its second parameter where the the first 4 numbers are options for mknod itself
+        // And the last 4 numbers are to set the permissions of the special file we create for the device
+        // It then takes in a dev_t which specifies the major and minor for the device
+        // The major selects the device driver
+        // The minor selects the kind of device
+        // https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/admin-guide/devices.txt
+        if (mknod("/dev/null", 0666 | S_IFCHR, ((static_cast<dev_t>(1) << 8)| 3)) != 0) throw std::runtime_error("Error: Unable to create /dev/null (f:isolateAndRun)");
+        if (mknod("/dev/zero", 0666 | S_IFCHR, ((static_cast<dev_t>(1) << 8)| 5)) != 0) throw std::runtime_error("Error: Unable to create /dev/zero (f:isolateAndRun)");
+        if (mknod("/dev/tty", 0666 | S_IFCHR, ((static_cast<dev_t>(5) << 8)| 0)) != 0) throw std::runtime_error("Error: Unable to create /dev/tty (f:isolateAndRun)");
+
         // Mount the proc file system
         if (mount("proc", "/proc", "proc", 0, NULL) != 0) {
             throw std::runtime_error("Error: Unable to remount the proc file system. (f:isolateAndRun)");
         }
-        
+
         exit(EXIT_SUCCESS);        
     } else if (pid > 0) {
         // Parent process - wait on the child to complete
