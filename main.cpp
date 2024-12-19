@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <linux/sched.h>
 #include <iostream>
+#include <format>
 #include <fstream>
 #include <unistd.h>
 #include <string>
@@ -60,13 +61,22 @@ void isolateAndRun() {
         if (mknod("/dev/zero", 0666 | S_IFCHR, ((static_cast<dev_t>(1) << 8)| 5)) != 0) throw std::runtime_error("Error: Unable to create /dev/zero (f:isolateAndRun)");
         if (mknod("/dev/tty", 0666 | S_IFCHR, ((static_cast<dev_t>(5) << 8)| 0)) != 0) throw std::runtime_error("Error: Unable to create /dev/tty (f:isolateAndRun)");
 
+        // Make dev/shm and dev/pts
+        std::filesystem::create_directories("/dev/shm");
+        std::filesystem::create_directories("/dev/pts");
+
         // Mount the proc file system
         if (mount("proc", "/proc", "proc", 0, NULL) != 0) {
             throw std::runtime_error("Error: Unable to remount the proc file system. (f:isolateAndRun)");
         }
 
+        // Mount devpts file system
+        if (mount("devpts", "/dev/pts", "devpts", 0, NULL) != 0) {
+            throw std::runtime_error("Error: Unable to mount devpts file system. (f:isolateAndRun))");
+        }
+
         // Mount the tmpfs file system in a few directories
-        std::array<const char *, 2> tmpFsDirs{{"/tmp", "/run"}};
+        std::array<const char *, 3> tmpFsDirs{{"/tmp", "/run", "/dev/shm"}};
         for (const char* dir: tmpFsDirs) {
             if (mount("tmpfs", dir, "tmpfs", 0, NULL) != 0) {
                 throw std::runtime_error(std::format("Error: Unable to mount the tmpfs file system in {}. (f:isolateAndRun)", dir));
@@ -78,8 +88,7 @@ void isolateAndRun() {
         if (mount("sysfs", "sys/", "sysfs", 0, NULL) != 0) {
             throw std::runtime_error("Error: Unable to remount the sys file system. (f:isolateAndRun)");
         }
-
-
+        
         exit(EXIT_SUCCESS);        
     } else if (pid > 0) {
         // Parent process - wait on the child to complete
