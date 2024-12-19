@@ -1,6 +1,7 @@
 #include "constants.hpp"
 #include "container_minifs.hpp"
 
+#include <array>
 #include <cstdlib>
 #include <linux/sched.h>
 #include <iostream>
@@ -63,6 +64,21 @@ void isolateAndRun() {
         if (mount("proc", "/proc", "proc", 0, NULL) != 0) {
             throw std::runtime_error("Error: Unable to remount the proc file system. (f:isolateAndRun)");
         }
+
+        // Mount the tmpfs file system in a few directories
+        std::array<const char *, 2> tmpFsDirs{{"/tmp", "/run"}};
+        for (const char* dir: tmpFsDirs) {
+            if (mount("tmpfs", dir, "tmpfs", 0, NULL) != 0) {
+                throw std::runtime_error(std::format("Error: Unable to mount the tmpfs file system in {}. (f:isolateAndRun)", dir));
+            }    
+        }
+
+        // Mount the sysfs file system
+        // Exposes kernel objects, attributes and their relationships to userspace in /sys
+        if (mount("sysfs", "sys/", "sysfs", 0, NULL) != 0) {
+            throw std::runtime_error("Error: Unable to remount the sys file system. (f:isolateAndRun)");
+        }
+
 
         exit(EXIT_SUCCESS);        
     } else if (pid > 0) {
