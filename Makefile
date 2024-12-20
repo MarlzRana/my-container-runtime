@@ -5,4 +5,4 @@ CXXFLAGS= -DDEBUG
 
 dev: main.cpp constants.cpp container_minifs.cpp
 	$(CXX) $(CXXFLAGS) main.cpp constants.cpp container_minifs.cpp -std="$(CXXSTD)" -o main
-	sudo ./main
+	sudo ./main $(ARGS)

@@ -13,7 +13,7 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 
-void isolateAndRun() {
+void isolateAndRun(int argc, char* argv[]) {
     // Run everything in a new child process
     pid_t pid = fork();
 
@@ -95,6 +95,10 @@ void isolateAndRun() {
         if (mount("sysfs", "sys/", "sysfs", 0, NULL) != 0) {
             throw std::runtime_error("Error: Unable to remount the sys file system. (f:isolateAndRun)");
         }
+
+        if (execvp(argv[0], argv) == -1) {
+            throw std::runtime_error("Error: Unable to execute the command. (f:isolateAndRun)");
+        }
         
         exit(EXIT_SUCCESS);        
     } else if (pid > 0) {
@@ -112,12 +116,16 @@ void isolateAndRun() {
 
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     #if DEBUG
     std::cout << std::unitbuf;
     #endif
+    if (argc < 2) {
+        throw std::runtime_error("Error: Please provide a command.");
+    }
+
     createMiniFileSystem();
-    isolateAndRun();
+    isolateAndRun(argc - 1, argv + 1); // Ignore the first argument
     destroyMiniFileSystem();
 
     return EXIT_SUCCESS;
