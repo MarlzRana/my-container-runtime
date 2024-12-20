@@ -71,11 +71,14 @@ void isolateAndRun() {
         }
 
         // Mount devpts file system
+        // /dev/pts is used for pseudo-terminals, enabling things like terminal emulation and remote terminal access
         if (mount("devpts", "/dev/pts", "devpts", 0, NULL) != 0) {
             throw std::runtime_error("Error: Unable to mount devpts file system. (f:isolateAndRun))");
         }
 
         // Mount the tmpfs file system in a few directories
+        // /dev/shm is a temporary file system typically used for IPC
+        // /run is used for storing runtime data for both the OS and other applications
         std::array<const char *, 3> tmpFsDirs{{"/tmp", "/run", "/dev/shm"}};
         for (const char* dir: tmpFsDirs) {
             if (mount("tmpfs", dir, "tmpfs", 0, NULL) != 0) {
