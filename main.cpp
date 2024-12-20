@@ -113,6 +113,9 @@ void isolateAndRun() {
 }
 
 int main() {
+    #if DEBUG
+    std::cout << std::unitbuf;
+    #endif
     createMiniFileSystem();
     isolateAndRun();
     destroyMiniFileSystem();

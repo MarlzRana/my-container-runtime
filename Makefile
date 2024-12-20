@@ -1,6 +1,8 @@
-CC=g++-14
-CPLUSPLUSSTD=c++20
+CXX=g++-14
+CXXSTD=c++20
+CXXFLAGS= -DDEBUG
+
 
 dev: main.cpp constants.cpp container_minifs.cpp
-	$(CC) main.cpp constants.cpp container_minifs.cpp -std="$(CPLUSPLUSSTD)" -o main
+	$(CXX) $(CXXFLAGS) main.cpp constants.cpp container_minifs.cpp -std="$(CXXSTD)" -o main
 	sudo ./main
