@@ -13,33 +13,33 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 
-void isolateAndRun(int argc, char* argv[]) {
+void isolateAndRun(std::string& command) {
+     // Turn off mount namespace propagation
+    // MS_PRIVATE and MS_REC make sure that any changes to the mount point from sub-mounts are not propagated back to the parent mount (/) and vice versa
+    if (mount("none", "/", NULL, MS_PRIVATE | MS_REC, NULL) == -1) {
+        throw std::runtime_error("Error: Unable to turn off mount namespace propagation. (f:isolateAndRun)");
+    }
+
+    // Give a child process new namespaces (that are different from the parent)
+    // CLONE_NEWPID gives the new child process a new PID namespace (with it having a pid of 1)
+    // CLONE_NEWNS gives the new child process a copy of the parents mount namespace by value
+    // So making changes in the childs mount namespace won't make changes to the parents mount namespace
+    // However mount namespace change propagation may still be on between the parent and child
+    // Hence we explicitly turn it off just before this
+    // CLONE_NEWUTS gives the child process a copy of the Hostname and NIS domain name
+    // CLONE_NEWIPC gives the child process a copy of the IPC namespace
+    // There are things needed for IPC here like mutexes, queues, and semaphores
+    // CLONE_NEWNET gives the child process its own network stack
+    int namespacesToUnshare{CLONE_NEWPID | CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC | CLONE_NEWNET | CLONE_NEWCGROUP};
+    if (unshare(namespacesToUnshare) == -1) {
+        throw std::runtime_error("Error: Unable to unshare namespaces from parent to create container. (f:isolateAndRun)");
+    }
+
     // Run everything in a new child process
     pid_t pid = fork();
 
     if (pid == 0) {
         // Child process
-
-        // Turn off mount namespace propagation
-        // MS_PRIVATE and MS_REC make sure that any changes to the mount point from sub-mounts are not propagated back to the parent mount (/) and vice versa
-        if (mount("none", "/", NULL, MS_PRIVATE | MS_REC, NULL) == -1) {
-            throw std::runtime_error("Error: Unable to turn off mount namespace propagation. (f:isolateAndRun)");
-        }
-        
-        // Give this child process new namespaces (that are different from the parent)
-        // CLONE_NEWPID gives the new child process a new PID namespace (with it having a pid of 1)
-        // CLONE_NEWNS gives the new child process a copy of the parents mount namespace by value
-        // So making changes in the childs mount namespace won't make changes to the parents mount namespace
-        // However mount namespace change propagation may still be on between the parent and child
-        // Hence we explicitly turn it off just before this
-        // CLONE_NEWUTS gives the child process a copy of the Hostname and NIS domain name
-        // CLONE_NEWIPC gives the child process a copy of the IPC namespace
-        // There are things needed for IPC here like mutexes, queues, and semaphores
-        // CLONE_NEWNET gives the child process its own network stack
-        int namespacesToUnshare{CLONE_NEWPID | CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC | CLONE_NEWNET};
-        if (unshare(namespacesToUnshare) == -1) {
-            throw std::runtime_error("Error: Unable to unshare namespaces from parent to create container. (f:isolateAndRun)");
-        }
 
         // Change the root
         if (chroot(const_cast<char*>(CONTAINER_ROOT.c_str())) != 0) {
@@ -96,9 +96,7 @@ void isolateAndRun(int argc, char* argv[]) {
             throw std::runtime_error("Error: Unable to remount the sys file system. (f:isolateAndRun)");
         }
 
-        if (execvp(argv[0], argv) == -1) {
-            throw std::runtime_error("Error: Unable to execute the command. (f:isolateAndRun)");
-        }
+        system(command.c_str());
         
         exit(EXIT_SUCCESS);        
     } else if (pid > 0) {
@@ -124,8 +122,18 @@ int main(int argc, char* argv[]) {
         throw std::runtime_error("Error: Please provide a command.");
     }
 
+    // Ignore the first arguments
+    --argc;
+    ++argv;
+
+    std::string command{};
+    for(int i{}; i < argc; ++i) {
+        command += argv[i];
+    }
+
+
     createMiniFileSystem();
-    isolateAndRun(argc - 1, argv + 1); // Ignore the first argument
+    isolateAndRun(command); // Ignore the first argument
     destroyMiniFileSystem();
 
     return EXIT_SUCCESS;
