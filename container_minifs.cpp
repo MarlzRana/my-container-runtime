@@ -129,41 +129,34 @@ void createMiniFileSystem() {
 
 void destroyMiniFileSystem() {
     // Delete the default devices in dev
-    pid_t pid = fork();
-    if (pid == 0) {
-        const std::string devNullPth{(CONTAINER_OVERLAY_FS_MERGED / "dev" / "null").c_str()};
-        const std::string devZeroPth{(CONTAINER_OVERLAY_FS_MERGED / "dev" / "zero").c_str()};
-        const std::string devTtyPth{(CONTAINER_OVERLAY_FS_MERGED / "dev" / "tty").c_str()};
-        char* const cmdArgs[]{const_cast<char *>("rm"), const_cast<char*>(devNullPth.c_str()), const_cast<char*>(devZeroPth.c_str()), const_cast<char*>(devTtyPth.c_str()), nullptr};
-        execvp(cmdArgs[0], cmdArgs);
-    } else if (pid > 0) {
-        int childStatus{};
-        waitpid(pid, &childStatus, 0);
-        if (childStatus != 0) {
-            throw std::runtime_error("Error: There was an error deleting the default devices in the container. (f:destroyMiniFileSystem))");
-        }
-    } else {
-        throw std::runtime_error("Error: There was an error whilst trying fork when trying to delete the default devices. (f:destroyMiniFileSystem)");
+    const std::filesystem::path devNullPth{CONTAINER_OVERLAY_FS_MERGED / "dev" / "null"};
+    const std::filesystem::path devZeroPth{CONTAINER_OVERLAY_FS_MERGED / "dev" / "zero"};
+    const std::filesystem::path devTtyPth{CONTAINER_OVERLAY_FS_MERGED / "dev" / "tty"};
+
+    std::error_code ec;
+    std::filesystem::remove(devNullPth, ec);
+    if (ec) {
+        throw std::runtime_error(std::format("Error: There was an error deleting {}. (f:destroyMiniFileSystem) - {}", devNullPth.c_str(), ec.message()));
     }
+    std::filesystem::remove(devZeroPth, ec);
+    if (ec) {
+        throw std::runtime_error(std::format("Error: There was an error deleting {}. (f:destroyMiniFileSystem) - {}", devZeroPth.c_str(), ec.message()));
+    }
+    std::filesystem::remove(devTtyPth, ec);
+    if (ec) {
+        throw std::runtime_error(std::format("Error: There was an error deleting {}. (f:destroyMiniFileSystem) - {}", devTtyPth.c_str(), ec.message()));
+    }
+
 
 
     // Let's unmount the overlay file system
-    if(umount(const_cast<char*>(CONTAINER_OVERLAY_FS_MERGED.c_str())) != 0) {
+    if(umount2(const_cast<char*>(CONTAINER_OVERLAY_FS_MERGED.c_str()), MNT_DETACH) != 0) {
         throw std::runtime_error("Error: Could not unmount overlay file system. (f:destroyMiniFileSystem)");
     }
 
-    pid = fork();
-    if (pid == 0) {
-        char cmd[]{"rm"};
-        char* const args[]{cmd, const_cast<char*>("-rf"), const_cast<char*>(CONTAINER_OVERLAY_FS.c_str()), nullptr};
-        execvp(cmd, args);
-    } else if (pid > 0) {
-        int childStatus{};
-        waitpid(pid, &childStatus, 0);
-        if (childStatus != 0) {
-            throw std::runtime_error(std::format("Error: There was an error destroying the container root. Perhaps the directory {} has already been deleted.  (f:destroyMiniFileSystem)", CONTAINER_OVERLAY_FS.c_str()));
-        }
-    } else {
-        throw std::runtime_error("Error: There was an error whilst trying fork when trying to delete the container overlay filesystem. (f:destroyMiniFileSystem)");
+    // Delete the container overlay filesystem using std::filesystem
+    std::filesystem::remove_all(CONTAINER_OVERLAY_FS, ec);
+    if (ec) {
+        throw std::runtime_error(std::format("Error: There was an error destroying the container root. Perhaps the directory {} has already been deleted. (f:destroyMiniFileSystem) - {}", CONTAINER_OVERLAY_FS.c_str(), ec.message()));
     }
 }
