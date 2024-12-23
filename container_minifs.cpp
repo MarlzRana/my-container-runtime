@@ -80,33 +80,13 @@ void untarMiniFileSystem() {
 }
 
 void removeResidueTar() {
-    // Let's fork so that we can execvp with output streams redirected to /dev/null
-    pid_t pid = fork();
-
-
-    // Child Process
-    if (pid == 0) {
-        // Redirect the child output streams to dev/null
-        freopen("/dev/null", "w", stdout);
-        freopen("/dev/null", "w", stderr);
-
-        // Execute the rm
-        char cmd[]{"rm"};
-        const std::filesystem::path tarFilePth{CONTAINER_OVERLAY_FS / std::string(ALPINE_LINUX_MINIFS_URL.substr(ALPINE_LINUX_MINIFS_URL.find_last_of('/') + 1))};
-        char* const args[]{cmd, const_cast<char*>(tarFilePth.c_str()), nullptr};
-        execvp(cmd, args);
-    } else if (pid > 0) {
-        // Parent process - wait on the child to complete
-        int childStatus{};
-        waitpid(pid, &childStatus, 0);
-
-        if (childStatus != 0) {
-            throw std::runtime_error("Error: There was an error removing the residue tar file. (f:removeResidueTar)");
-        }
-    } else {
-        throw std::runtime_error("Error: There was an error whilst trying fork. (f:removeResidueTar)");
-    }
+    const std::filesystem::path tarFilePth{CONTAINER_OVERLAY_FS / std::string(ALPINE_LINUX_MINIFS_URL.substr(ALPINE_LINUX_MINIFS_URL.find_last_of('/') + 1))};
     
+    std::error_code ec;
+    std::filesystem::remove(tarFilePth);
+    if (ec) {
+        throw std::runtime_error(std::format("Error: There was an error deleting {}. (f:removeResidueTar) - {}", tarFilePth.c_str(), ec.message()));
+    }    
 }
 
 void mountOverlayFS() {
@@ -134,6 +114,7 @@ void destroyMiniFileSystem() {
     const std::filesystem::path devTtyPth{CONTAINER_OVERLAY_FS_MERGED / "dev" / "tty"};
 
     std::error_code ec;
+
     std::filesystem::remove(devNullPth, ec);
     if (ec) {
         throw std::runtime_error(std::format("Error: There was an error deleting {}. (f:destroyMiniFileSystem) - {}", devNullPth.c_str(), ec.message()));
