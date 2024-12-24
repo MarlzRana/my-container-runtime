@@ -13,8 +13,8 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 
-void isolateAndRun(std::string& command) {
-     // Turn off mount namespace propagation
+void unshare() {
+    // Turn off mount namespace propagation
     // MS_PRIVATE and MS_REC make sure that any changes to the mount point from sub-mounts are not propagated back to the parent mount (/) and vice versa
     if (mount("none", "/", NULL, MS_PRIVATE | MS_REC, NULL) == -1) {
         throw std::runtime_error("Error: Unable to turn off mount namespace propagation. (f:isolateAndRun)");
@@ -34,6 +34,11 @@ void isolateAndRun(std::string& command) {
     if (unshare(namespacesToUnshare) == -1) {
         throw std::runtime_error("Error: Unable to unshare namespaces from parent to create container. (f:isolateAndRun)");
     }
+}
+
+void isolateAndRun(std::string& command) {
+
+    unshare();
 
     // Run everything in a new child process
     pid_t pid = fork();
