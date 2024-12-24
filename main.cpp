@@ -47,6 +47,23 @@ void changeRoot() {
     }
 }
 
+void makeSpecialDevices() {
+    // Setup the default devices in /dev
+    // It takes in a mode as its second parameter where the the first 4 numbers are options for mknod itself
+    // And the last 4 numbers are to set the permissions of the special file we create for the device
+    // It then takes in a dev_t which specifies the major and minor for the device
+    // The major selects the device driver
+    // The minor selects the kind of device
+    // https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/admin-guide/devices.txt
+    // /dev/null is used as data void - anything that gets put in here disappears essentially
+    // /dev/zero is an infinite string of null(zero) bytes
+    // /dev/tty represents the controlling terminal for the current process and allows the current process to interact with the terminal
+    // Works in a very similar way to std::cout/std::cin - I suspect this what is it using under the hood
+    if (mknod("/dev/null", 0666 | S_IFCHR, ((static_cast<dev_t>(1) << 8)| 3)) != 0) throw std::runtime_error("Error: Unable to create /dev/null (f:isolateAndRun)");
+    if (mknod("/dev/zero", 0666 | S_IFCHR, ((static_cast<dev_t>(1) << 8)| 5)) != 0) throw std::runtime_error("Error: Unable to create /dev/zero (f:isolateAndRun)");
+    if (mknod("/dev/tty", 0666 | S_IFCHR, ((static_cast<dev_t>(5) << 8)| 0)) != 0) throw std::runtime_error("Error: Unable to create /dev/tty (f:isolateAndRun)");
+}
+
 void isolateAndRun(std::string& command) {
 
     unshare();
@@ -58,21 +75,8 @@ void isolateAndRun(std::string& command) {
         // Child process
 
         changeRoot();
-        
-        // Setup the default devices in /dev
-        // It takes in a mode as its second parameter where the the first 4 numbers are options for mknod itself
-        // And the last 4 numbers are to set the permissions of the special file we create for the device
-        // It then takes in a dev_t which specifies the major and minor for the device
-        // The major selects the device driver
-        // The minor selects the kind of device
-        // https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/admin-guide/devices.txt
-        // /dev/null is used as data void - anything that gets put in here disappears essentially
-        // /dev/zero is an infinite string of null(zero) bytes
-        // /dev/tty represents the controlling terminal for the current process and allows the current process to interact with the terminal
-        // Works in a very similar way to std::cout/std::cin - I suspect this what is it using under the hood
-        if (mknod("/dev/null", 0666 | S_IFCHR, ((static_cast<dev_t>(1) << 8)| 3)) != 0) throw std::runtime_error("Error: Unable to create /dev/null (f:isolateAndRun)");
-        if (mknod("/dev/zero", 0666 | S_IFCHR, ((static_cast<dev_t>(1) << 8)| 5)) != 0) throw std::runtime_error("Error: Unable to create /dev/zero (f:isolateAndRun)");
-        if (mknod("/dev/tty", 0666 | S_IFCHR, ((static_cast<dev_t>(5) << 8)| 0)) != 0) throw std::runtime_error("Error: Unable to create /dev/tty (f:isolateAndRun)");
+
+        makeSpecialDevices();
 
         // Make dev/shm and dev/pts
         std::filesystem::create_directories("/dev/shm");
