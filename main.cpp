@@ -13,12 +13,10 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 
-void unshare() {
+void unshareNamespaces() {
     // Turn off mount namespace propagation
     // MS_PRIVATE and MS_REC make sure that any changes to the mount point from sub-mounts are not propagated back to the parent mount (/) and vice versa
-    if (mount("none", "/", NULL, MS_PRIVATE | MS_REC, NULL) == -1) {
-        throw std::runtime_error("Error: Unable to turn off mount namespace propagation. (f:isolateAndRun)");
-    }
+    if (mount("none", "/", NULL, MS_PRIVATE | MS_REC, NULL) != 0) throw std::runtime_error("Error: Unable to turn off mount namespace propagation. (f:isolateAndRun)");
 
     // Give a child process new namespaces (that are different from the parent)
     // CLONE_NEWPID gives the new child process a new PID namespace (with it having a pid of 1)
@@ -31,20 +29,15 @@ void unshare() {
     // There are things needed for IPC here like mutexes, queues, and semaphores
     // CLONE_NEWNET gives the child process its own network stack
     int namespacesToUnshare{CLONE_NEWPID | CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC | CLONE_NEWNET | CLONE_NEWCGROUP};
-    if (unshare(namespacesToUnshare) == -1) {
-        throw std::runtime_error("Error: Unable to unshare namespaces from parent to create container. (f:isolateAndRun)");
-    }
+    if (unshare(namespacesToUnshare) != 0) throw std::runtime_error("Error: Unable to unshare namespaces from parent to create container. (f:isolateAndRun)");
 }
 
 void changeRoot() {
     // Change the root
-    if (chroot(const_cast<char*>(CONTAINER_ROOT.c_str())) != 0) {
-        throw std::runtime_error("Error: Unable to change the root directory. (f:isolateAndRun)");
-    }
+    if (chroot(const_cast<char*>(CONTAINER_ROOT.c_str())) != 0) throw std::runtime_error("Error: Unable to change the root directory. (f:isolateAndRun)");
+
     // Change the working directory to the new root
-    if (chdir("/") != 0) {
-        throw std::runtime_error("Error: Unable to change working directory to new root. (f:isolateAndRun)");
-    }
+    if (chdir("/") != 0) throw std::runtime_error("Error: Unable to change working directory to new root. (f:isolateAndRun)");    
 }
 
 void makeSpecialDevices() {
@@ -66,7 +59,7 @@ void makeSpecialDevices() {
 
 void isolateAndRun(std::string& command) {
 
-    unshare();
+    unshareNamespaces();
 
     // Run everything in a new child process
     pid_t pid = fork();
