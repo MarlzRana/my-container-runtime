@@ -57,6 +57,39 @@ void makeSpecialDevices() {
     if (mknod("/dev/tty", 0666 | S_IFCHR, ((static_cast<dev_t>(5) << 8)| 0)) != 0) throw std::runtime_error("Error: Unable to create /dev/tty (f:isolateAndRun)");
 }
 
+void mountFileSystems() {
+    // Make dev/shm and dev/pts
+    std::filesystem::create_directories("/dev/shm");
+    std::filesystem::create_directories("/dev/pts");
+
+    // Mount the proc file system
+    if (mount("proc", "/proc", "proc", 0, NULL) != 0) {
+        throw std::runtime_error("Error: Unable to remount the proc file system. (f:isolateAndRun)");
+    }
+
+    // Mount devpts file system
+    // /dev/pts is used for pseudo-terminals, enabling things like terminal emulation and remote terminal access
+    if (mount("devpts", "/dev/pts", "devpts", 0, NULL) != 0) {
+        throw std::runtime_error("Error: Unable to mount devpts file system. (f:isolateAndRun))");
+    }
+
+    // Mount the tmpfs file system in a few directories
+    // /dev/shm is a temporary file system typically used for IPC
+    // /run is used for storing runtime data for both the OS and other applications
+    std::array<const char *, 3> tmpFsDirs{{"/tmp", "/run", "/dev/shm"}};
+    for (const char* dir: tmpFsDirs) {
+        if (mount("tmpfs", dir, "tmpfs", 0, NULL) != 0) {
+            throw std::runtime_error(std::format("Error: Unable to mount the tmpfs file system in {}. (f:isolateAndRun)", dir));
+        }    
+    }
+
+    // Mount the sysfs file system
+    // Exposes kernel objects, attributes and their relationships to userspace in /sys
+    if (mount("sysfs", "sys/", "sysfs", 0, NULL) != 0) {
+        throw std::runtime_error("Error: Unable to remount the sys file system. (f:isolateAndRun)");
+    }
+}
+
 void isolateAndRun(std::string& command) {
 
     unshareNamespaces();
@@ -71,36 +104,7 @@ void isolateAndRun(std::string& command) {
 
         makeSpecialDevices();
 
-        // Make dev/shm and dev/pts
-        std::filesystem::create_directories("/dev/shm");
-        std::filesystem::create_directories("/dev/pts");
-
-        // Mount the proc file system
-        if (mount("proc", "/proc", "proc", 0, NULL) != 0) {
-            throw std::runtime_error("Error: Unable to remount the proc file system. (f:isolateAndRun)");
-        }
-
-        // Mount devpts file system
-        // /dev/pts is used for pseudo-terminals, enabling things like terminal emulation and remote terminal access
-        if (mount("devpts", "/dev/pts", "devpts", 0, NULL) != 0) {
-            throw std::runtime_error("Error: Unable to mount devpts file system. (f:isolateAndRun))");
-        }
-
-        // Mount the tmpfs file system in a few directories
-        // /dev/shm is a temporary file system typically used for IPC
-        // /run is used for storing runtime data for both the OS and other applications
-        std::array<const char *, 3> tmpFsDirs{{"/tmp", "/run", "/dev/shm"}};
-        for (const char* dir: tmpFsDirs) {
-            if (mount("tmpfs", dir, "tmpfs", 0, NULL) != 0) {
-                throw std::runtime_error(std::format("Error: Unable to mount the tmpfs file system in {}. (f:isolateAndRun)", dir));
-            }    
-        }
-
-        // Mount the sysfs file system
-        // Exposes kernel objects, attributes and their relationships to userspace in /sys
-        if (mount("sysfs", "sys/", "sysfs", 0, NULL) != 0) {
-            throw std::runtime_error("Error: Unable to remount the sys file system. (f:isolateAndRun)");
-        }
+        mountFileSystems();
 
         system(command.c_str());
         
@@ -116,8 +120,6 @@ void isolateAndRun(std::string& command) {
     } else {
         throw std::runtime_error("Error: There was an error whilst trying fork. (f:isolateAndRun)");
     }
-
-
 }
 
 int main(int argc, char* argv[]) {
@@ -136,7 +138,6 @@ int main(int argc, char* argv[]) {
     for(int i{}; i < argc; ++i) {
         command += argv[i];
     }
-
 
     createMiniFileSystem();
     isolateAndRun(command); // Ignore the first argument
