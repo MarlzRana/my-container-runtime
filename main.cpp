@@ -36,6 +36,17 @@ void unshare() {
     }
 }
 
+void changeRoot() {
+    // Change the root
+    if (chroot(const_cast<char*>(CONTAINER_ROOT.c_str())) != 0) {
+        throw std::runtime_error("Error: Unable to change the root directory. (f:isolateAndRun)");
+    }
+    // Change the working directory to the new root
+    if (chdir("/") != 0) {
+        throw std::runtime_error("Error: Unable to change working directory to new root. (f:isolateAndRun)");
+    }
+}
+
 void isolateAndRun(std::string& command) {
 
     unshare();
@@ -46,15 +57,8 @@ void isolateAndRun(std::string& command) {
     if (pid == 0) {
         // Child process
 
-        // Change the root
-        if (chroot(const_cast<char*>(CONTAINER_ROOT.c_str())) != 0) {
-            throw std::runtime_error("Error: Unable to change the root directory. (f:isolateAndRun)");
-        }
-        // Change the working directory to the new root
-        if (chdir("/") != 0) {
-            throw std::runtime_error("Error: Unable to change working directory to new root. (f:isolateAndRun)");
-        }
-
+        changeRoot();
+        
         // Setup the default devices in /dev
         // It takes in a mode as its second parameter where the the first 4 numbers are options for mknod itself
         // And the last 4 numbers are to set the permissions of the special file we create for the device
