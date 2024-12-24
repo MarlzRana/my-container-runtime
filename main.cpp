@@ -139,9 +139,9 @@ int main(int argc, char* argv[]) {
         command += argv[i];
     }
 
-    createMiniFileSystem();
+    container::createMiniFileSystem();
     isolateAndRun(command); // Ignore the first argument
-    destroyMiniFileSystem();
+    container::destroyMiniFileSystem();
 
     return EXIT_SUCCESS;
 }
