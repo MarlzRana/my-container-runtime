@@ -19,7 +19,9 @@ int main(int argc, char* argv[]) {
     ++argv;
 
     std::string command{};
-    for(int i{}; i < argc; ++i) {
+    command += argv[0];
+    for(int i{1}; i < argc; ++i) {
+        command += " ";
         command += argv[i];
     }
 
