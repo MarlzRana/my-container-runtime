@@ -14,6 +14,51 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 
+void setupControlGroup() {
+    if (std::filesystem::exists("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime")) {
+        return;
+    }
+
+    std::filesystem::create_directories("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime");
+
+    std::ofstream cgroupControlFile("/sys/fs/cgroup/mycontainerruntime.slice/cgroup.subtree_control");
+    if (!cgroupControlFile.is_open()) {
+        throw std::runtime_error("Error: Unable to open cgroup.subtree_control file. (f:setupControlGroups)");
+    }
+    cgroupControlFile << "+memory +cpu";
+    cgroupControlFile.close();
+
+    std::ofstream cpuMaxFile("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime/cpu.max");
+    if (!cpuMaxFile.is_open()) {
+        throw std::runtime_error("Error: Unable to open cpu.max file. (f:setupControlGroups)");
+    }
+    cpuMaxFile << "10000 100000";
+    cpuMaxFile.close();
+
+    std::ofstream memoryMaxFile("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime/memory.max");
+    if (!memoryMaxFile.is_open()) {
+        throw std::runtime_error("Error: Unable to open memory.max file. (f:setupControlGroups)");
+    }
+    memoryMaxFile << "500M";
+    memoryMaxFile.close();
+
+    std::ofstream memorySwapMaxFile("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime/memory.swap.max");
+    if (!memorySwapMaxFile.is_open()) {
+        throw std::runtime_error("Error: Unable to open memory.swap.max");
+    }
+    memorySwapMaxFile << "0";
+    memorySwapMaxFile.close();
+}
+
+void assignControlGroup() {
+    std::ofstream cgroupProcsFile("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime/cgroup.procs");
+    if (!cgroupProcsFile.is_open()) {
+        throw std::runtime_error("Error: Unable to open cgroup.procs file. (f:assignControlGroup)");
+    }
+    cgroupProcsFile << getpid();
+    cgroupProcsFile.close();
+}
+
 void unshareNamespaces() {
     // Turn off mount namespace propagation
     // MS_PRIVATE and MS_REC make sure that any changes to the mount point from sub-mounts are not propagated back to the parent mount (/) and vice versa
@@ -92,6 +137,10 @@ void mountFileSystems() {
 }
 
 void container::isolateAndRun(std::string& command) {
+
+    setupControlGroup();
+
+    assignControlGroup();
 
     unshareNamespaces();
 
