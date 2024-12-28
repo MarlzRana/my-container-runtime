@@ -15,11 +15,9 @@
 #include <sys/stat.h>
 
 void setupControlGroup() {
-    if (std::filesystem::exists("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime")) {
-        return;
+    if (!std::filesystem::exists("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime")) {
+        std::filesystem::create_directories("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime");
     }
-
-    std::filesystem::create_directories("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime");
 
     std::ofstream cgroupControlFile("/sys/fs/cgroup/mycontainerruntime.slice/cgroup.subtree_control");
     if (!cgroupControlFile.is_open()) {
