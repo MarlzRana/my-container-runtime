@@ -9,6 +9,7 @@ This project is a simple container runtime implementation using C++. It provides
 
 ## 📋 Prerequisites
 
+- A Linux Machine/Virtual Machine
 - g++-14
 - Valgrind (for memory checking)
 - sudo privileges
@@ -64,3 +65,4 @@ You may also find these references helpful during your adventures 🤠
 
 - [Open Container Initiative](https://opencontainers.org/)
 - [runc](https://github.com/opencontainers/runc)
+- [How Docker for Mac Actually Spins Up a Linux Virtual Machine](https://news.ycombinator.com/item?id=30707599)
