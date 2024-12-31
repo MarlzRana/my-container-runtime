@@ -11,5 +11,7 @@ extern const std::filesystem::path CONTAINER_OVERLAY_FS_DIFF;
 extern const std::filesystem::path CONTAINER_OVERLAY_FS_MERGED;
 extern const std::filesystem::path CONTAINER_OVERLAY_FS_WORK;
 extern const std::filesystem::path CONTAINER_ROOT;
+extern const std::filesystem::path CONTAINER_CGROUP_PTH;
+
 
 #endif

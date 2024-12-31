@@ -8,3 +8,4 @@ const std::filesystem::path CONTAINER_OVERLAY_FS_DIFF{CONTAINER_OVERLAY_FS / "di
 const std::filesystem::path CONTAINER_OVERLAY_FS_MERGED{CONTAINER_OVERLAY_FS / "merged"};
 const std::filesystem::path CONTAINER_OVERLAY_FS_WORK{CONTAINER_OVERLAY_FS / ".work"};
 const std::filesystem::path CONTAINER_ROOT{CONTAINER_OVERLAY_FS_MERGED};
+const std::filesystem::path CONTAINER_CGROUP_PTH{"/sys/fs/cgroup/mycontainerruntime.slice/"};
