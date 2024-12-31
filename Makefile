@@ -1,6 +1,6 @@
 CXX=g++-14
 CXXSTD=c++20
-CXXFLAGS= -DDEBUG
+CXXFLAGS= -DDEBUG -Wall
 
 
 dev: main.cpp constants.cpp container_overlayfs.cpp containerization.cpp
