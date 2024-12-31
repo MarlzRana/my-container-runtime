@@ -15,10 +15,12 @@
 #include <sys/stat.h>
 
 void setupControlGroup() {
+    // It's very hard to delete a control group, so on multiple runs lets use the same control group
     if (!std::filesystem::exists("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime")) {
         std::filesystem::create_directories("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime");
     }
 
+    // Enable the memory and CPU memory controllers in the control group
     std::ofstream cgroupControlFile("/sys/fs/cgroup/mycontainerruntime.slice/cgroup.subtree_control");
     if (!cgroupControlFile.is_open()) {
         throw std::runtime_error("Error: Unable to open cgroup.subtree_control file. (f:setupControlGroups)");
@@ -26,6 +28,9 @@ void setupControlGroup() {
     cgroupControlFile << "+memory +cpu";
     cgroupControlFile.close();
 
+    // Use every 10000 of 100000 cpu time
+    // 100000 represents the max available CPU seconds for a single CPU core
+    // However in reality, on a multi-core system, these 10000 seconds could be split across multiple machines
     std::ofstream cpuMaxFile("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime/cpu.max");
     if (!cpuMaxFile.is_open()) {
         throw std::runtime_error("Error: Unable to open cpu.max file. (f:setupControlGroups)");
@@ -33,6 +38,7 @@ void setupControlGroup() {
     cpuMaxFile << "10000 100000";
     cpuMaxFile.close();
 
+    // Restricts the memory usage of the container to 500MB
     std::ofstream memoryMaxFile("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime/memory.max");
     if (!memoryMaxFile.is_open()) {
         throw std::runtime_error("Error: Unable to open memory.max file. (f:setupControlGroups)");
@@ -40,6 +46,7 @@ void setupControlGroup() {
     memoryMaxFile << "500M";
     memoryMaxFile.close();
 
+    // Disables memory swap
     std::ofstream memorySwapMaxFile("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime/memory.swap.max");
     if (!memorySwapMaxFile.is_open()) {
         throw std::runtime_error("Error: Unable to open memory.swap.max");
@@ -49,6 +56,7 @@ void setupControlGroup() {
 }
 
 void assignControlGroup() {
+    // Puts the current process in the control group
     std::ofstream cgroupProcsFile("/sys/fs/cgroup/mycontainerruntime.slice/my-container-runtime/cgroup.procs");
     if (!cgroupProcsFile.is_open()) {
         throw std::runtime_error("Error: Unable to open cgroup.procs file. (f:assignControlGroup)");
