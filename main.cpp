@@ -25,9 +25,9 @@ int main(int argc, char* argv[]) {
         command += argv[i];
     }
 
-    container::createMiniFileSystem();
+    container::createFileSystem();
     container::isolateAndRun(command);
-    container::destroyMiniFileSystem();
+    container::destroyFileSystem();
 
     return EXIT_SUCCESS;
 }

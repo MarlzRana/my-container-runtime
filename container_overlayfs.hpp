@@ -2,8 +2,8 @@
 #define CONTAINER_MINIFS_H
 
 namespace container {
-    void createMiniFileSystem();
-    void destroyMiniFileSystem();
+    void createFileSystem();
+    void destroyFileSystem();
 }
 
 #endif

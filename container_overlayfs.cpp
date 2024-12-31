@@ -98,7 +98,7 @@ void mountOverlayFS() {
     
 }
 
-void container::createMiniFileSystem() {
+void container::createFileSystem() {
     makeContainerOverlayFSDirectories();
     curlMiniFileSystem();
     untarMiniFileSystem();
@@ -107,7 +107,7 @@ void container::createMiniFileSystem() {
 }
 
 
-void container::destroyMiniFileSystem() {
+void container::destroyFileSystem() {
     // Delete the default devices in dev
     const std::filesystem::path devNullPth{CONTAINER_OVERLAY_FS_MERGED / "dev" / "null"};
     const std::filesystem::path devZeroPth{CONTAINER_OVERLAY_FS_MERGED / "dev" / "zero"};
