@@ -44,7 +44,7 @@ make dev-valgrind ARGS="<command>"
 Provide the command you want to run inside the container as an argument to the `make` command. For example:
 
 ```sh
-make dev ARGS="echo Hello, World!"
+make dev ARGS="sh"
 ```
 
 ## 💡 Motivation
