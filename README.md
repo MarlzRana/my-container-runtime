@@ -58,8 +58,8 @@ He once sent me a comic some random day over Slack. It was a single page and had
 A huge shout out the individuals below. I'm not too sure how I would of otherwise got it done without these guides.
 
 - [Run your own container without Docker](https://medium.com/@alexander.murylev/run-your-own-container-without-docker-60c297faf010) by [Alexander Murylev](https://www.linkedin.com/in/murylev/)
-- [https://michalpitr.substack.com/p/primer-on-linux-container-filesystems](https://michalpitr.substack.com/p/primer-on-linux-container-filesystems) by [Michal Pitr](https://www.linkedin.com/in/michal-pitr-a7156b127/)
-- [https://michalpitr.substack.com/p/linux-container-from-scratch](https://michalpitr.substack.com/p/linux-container-from-scratch) by [Michal Pitr](https://www.linkedin.com/in/michal-pitr-a7156b127/)
+- [Primer on Linux container filesystems](https://michalpitr.substack.com/p/primer-on-linux-container-filesystems) by [Michal Pitr](https://www.linkedin.com/in/michal-pitr-a7156b127/)
+- [Linux container from scratch](https://michalpitr.substack.com/p/linux-container-from-scratch) by [Michal Pitr](https://www.linkedin.com/in/michal-pitr-a7156b127/)
 
 You may also find these references helpful during your adventures 🤠
 
