@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
         throw std::runtime_error("Error: Please provide a command.");
     }
 
-    // Ignore the first arguments
+    // Ignore the first argument
     --argc;
     ++argv;
 
