@@ -1,6 +1,6 @@
 # 🚀 My Container Runtime
 
-This project is a simple container runtime implementation using C++. It provides basic functionalities to create, isolate, and run commands in a containerized environment using:
+This project is a simple container runtime implementation using C++. It provides basic functionalities to create, isolate and run commands in a containerized environment using:
 
 - Overlay File Systems
 - Control Groups
